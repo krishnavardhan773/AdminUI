@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Trash2, Plus, Eye } from 'lucide-react';
+import { Edit3, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFetch, useDelete } from '../../hooks/useFetch';
 import { Blog } from '../../types';
@@ -14,11 +14,11 @@ const BlogList: React.FC = () => {
   
   const { data: blogs, isLoading, error } = useFetch<Blog[]>(
     ['blogs'], 
-    '/blogs/'
+    '/api/blogs/'
   );
   
   const { mutate: deleteBlog, isLoading: isDeleting } = useDelete(
-    '/blogs',
+    '/api/public/blogs',
     ['blogs'],
     {
       onSuccess: () => {
@@ -39,14 +39,24 @@ const BlogList: React.FC = () => {
   
   const columns = [
     {
+      key: 'id',
+      header: 'ID',
+      className: 'w-16',
+    },
+    {
       key: 'title',
       header: 'Title',
       render: (blog: Blog) => (
         <div>
           <p className="font-medium text-gray-900">{blog.title}</p>
-          <p className="text-xs text-gray-500 truncate">{blog.subheading}</p>
+          <p className="text-sm text-gray-500 truncate">{blog.subheading}</p>
         </div>
       ),
+    },
+    {
+      key: 'slug',
+      header: 'Slug',
+      className: 'w-32',
     },
     {
       key: 'estimated_read_time',
@@ -56,26 +66,16 @@ const BlogList: React.FC = () => {
     },
     {
       key: 'created_at',
-      header: 'Created',
+      header: 'Created At',
       render: (blog: Blog) => new Date(blog.created_at).toLocaleDateString(),
       className: 'w-32',
     },
     {
       key: 'actions',
       header: 'Actions',
-      className: 'w-32',
+      className: 'w-24',
       render: (blog: Blog) => (
         <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/blogs/${blog.id}`);
-            }}
-          >
-            <Eye size={16} />
-          </Button>
           <Button 
             size="sm" 
             variant="ghost"
@@ -121,7 +121,7 @@ const BlogList: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Blogs</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
         <Button 
           variant="primary" 
           leftIcon={<Plus size={16} />}

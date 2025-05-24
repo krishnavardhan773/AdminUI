@@ -4,29 +4,20 @@ import { ApiError } from '../types';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: 'https://stocai-blog-backend.onrender.com/api',
+  baseURL: 'https://stocai-blog-backend.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for sending cookies
+  // Remove withCredentials since this is a public API
+  withCredentials: false,
 });
 
-// Request interceptor to add CSRF token
+// Request interceptor to add authorization header
 api.interceptors.request.use(
   async (config) => {
-    // Get CSRF token if needed
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase() || '')) {
-      const response = await fetch('https://stocai-blog-backend.onrender.com/admin/login/', {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const html = await response.text();
-      const csrfMatch = html.match(/name="csrfmiddlewaretoken" value="([^"]+)"/);
-      const csrfToken = csrfMatch ? csrfMatch[1] : '';
-      
-      if (csrfToken) {
-        config.headers['X-CSRFToken'] = csrfToken;
-      }
+    const session = getSession();
+    if (session) {
+      config.headers['Authorization'] = `Bearer ${session}`;
     }
     return config;
   },

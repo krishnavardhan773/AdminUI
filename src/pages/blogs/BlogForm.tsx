@@ -27,13 +27,13 @@ const BlogForm: React.FC = () => {
   
   const { data: blog, isLoading: isFetchingBlog } = useFetch<Blog>(
     ['blog', id], 
-    `/blogs/${id}/`,
+    `/api/blogs/${id}/`,
     undefined,
     { enabled: isEditMode }
   );
   
   const { mutate: createBlog, isLoading: isCreating } = useCreate<Blog, BlogFormData>(
-    '/blogs/',
+    '/api/public/blogs/',
     ['blogs'],
     {
       onSuccess: () => {
@@ -47,7 +47,7 @@ const BlogForm: React.FC = () => {
   );
   
   const { mutate: updateBlog, isLoading: isUpdating } = useUpdate<Blog, BlogFormData>(
-    '/blogs',
+    '/api/public/blogs',
     ['blogs', 'blog', id],
     {
       onSuccess: () => {
@@ -139,7 +139,6 @@ const BlogForm: React.FC = () => {
                 {...register('title', { 
                   required: 'Title is required',
                   onChange: (e) => {
-                    // Auto-generate slug based on title
                     const slugInput = document.querySelector('input[name="slug"]') as HTMLInputElement;
                     if (slugInput && (slugInput.value === '' || slugInput.value === generateSlug(e.target.value.substring(0, e.target.value.length - 1)))) {
                       slugInput.value = generateSlug(e.target.value);
@@ -218,16 +217,6 @@ const BlogForm: React.FC = () => {
                   valueAsNumber: true,
                 })}
               />
-            </div>
-            
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                variant="primary"
-                isLoading={isLoading}
-              >
-                {isEditMode ? 'Update Blog' : 'Create Blog'}
-              </Button>
             </div>
           </form>
         </Card.Content>

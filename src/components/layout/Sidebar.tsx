@@ -1,13 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import { 
   BookOpen, 
-  MessageSquare, 
   Star, 
   BookText, 
   LayoutDashboard, 
-  LogOut, 
   Menu, 
   X
 } from 'lucide-react';
@@ -18,12 +15,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, toggleMobile }) => {
-  const { logout } = useAuth();
-
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, to: '/dashboard' },
     { label: 'Blogs', icon: <BookOpen size={20} />, to: '/blogs' },
-    { label: 'Comments', icon: <MessageSquare size={20} />, to: '/comments' },
     { label: 'Feedback', icon: <Star size={20} />, to: '/feedback' },
     { label: 'Stories', icon: <BookText size={20} />, to: '/stories' },
   ];
@@ -85,17 +79,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, toggleMobile }) => {
               </NavLink>
             ))}
           </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-gray-200">
-            <button
-              className="w-full flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-150 ease-in-out"
-              onClick={logout}
-            >
-              <LogOut size={20} className="mr-3" />
-              <span>Logout</span>
-            </button>
-          </div>
         </div>
       </aside>
 

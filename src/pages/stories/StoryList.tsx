@@ -20,11 +20,11 @@ const StoryList: React.FC = () => {
   
   const { data: stories, isLoading, error } = useFetch<Story[]>(
     ['stories'], 
-    '/stories/'
+    '/api/admin/stories/'
   );
   
   const { mutate: deleteStory, isLoading: isDeleting } = useDelete(
-    '/stories',
+    '/api/admin/stories',
     ['stories'],
     {
       onSuccess: () => {
@@ -38,7 +38,7 @@ const StoryList: React.FC = () => {
   );
   
   const { mutate: updateStory, isLoading: isUpdating } = useUpdate<Story>(
-    '/stories',
+    '/api/admin/stories',
     ['stories'],
     {
       onSuccess: () => {
@@ -100,12 +100,12 @@ const StoryList: React.FC = () => {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: 'Consent Status',
       render: (item: Story) => (
         <Badge
           variant={item.allow_publish ? 'success' : 'warning'}
         >
-          {item.allow_publish ? 'Approved' : 'Pending'}
+          {item.allow_publish ? 'Consent given' : 'Consent not given'}
         </Badge>
       ),
       className: 'w-32',
@@ -123,37 +123,7 @@ const StoryList: React.FC = () => {
       ),
       render: (item: Story) => new Date(item.submitted_at).toLocaleDateString(),
       className: 'w-32',
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      className: 'w-32',
-      render: (item: Story) => (
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant={item.allow_publish ? 'ghost' : 'success'}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTogglePublish(item);
-            }}
-            isLoading={isUpdating}
-          >
-            {item.allow_publish ? <XCircle size={16} /> : <CheckCircle size={16} />}
-          </Button>
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              setStoryToDelete(item);
-            }}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      ),
-    },
+    }
   ];
   
   if (error) {
@@ -175,8 +145,8 @@ const StoryList: React.FC = () => {
   
   const publishOptions = [
     { value: 'all', label: 'All Stories' },
-    { value: 'approved', label: 'Approved Stories' },
-    { value: 'pending', label: 'Pending Approval' },
+    { value: 'approved', label: 'Consent Given' },
+    { value: 'pending', label: 'Consent Not Given' },
   ];
   
   return (
@@ -261,7 +231,7 @@ const StoryList: React.FC = () => {
                 variant={storyToView.allow_publish ? 'success' : 'warning'}
                 size="lg"
               >
-                {storyToView.allow_publish ? 'Approved for Publishing' : 'Pending Approval'}
+                {storyToView.allow_publish ? 'Consent given' : 'Consent not given'}
               </Badge>
               <span className="text-sm text-gray-500">
                 Submitted: {new Date(storyToView.submitted_at).toLocaleString()}
@@ -295,7 +265,7 @@ const StoryList: React.FC = () => {
                   }}
                   disabled={storyToView.allow_publish}
                 >
-                  Approve
+                  Mark as Consent Given
                 </Button>
                 <Button
                   variant={!storyToView.allow_publish ? 'outline' : 'warning'}
@@ -311,7 +281,7 @@ const StoryList: React.FC = () => {
                   }}
                   disabled={!storyToView.allow_publish}
                 >
-                  Unapprove
+                  Mark as Consent Not Given
                 </Button>
               </div>
             </div>

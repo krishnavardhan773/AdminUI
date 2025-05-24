@@ -1,183 +1,42 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Trash2, ExternalLink, SortAsc, SortDesc, Calendar, Star } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Star, Calendar, TrendingUp, MessageSquare, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { useFetch, useDelete } from '../../hooks/useFetch';
+import { useFetch } from '../../hooks/useFetch';
 import { Feedback, Blog } from '../../types';
-import Table from '../../components/ui/Table';
-import Button from '../../components/ui/Button';
-import Select from '../../components/ui/Select';
-import Modal from '../../components/ui/Modal';
 import Card from '../../components/ui/Card';
-
-type SortField = 'rating' | 'submitted_at';
-type SortOrder = 'asc' | 'desc';
+import Select from '../../components/ui/Select';
+import Button from '../../components/ui/Button';
 
 const FeedbackList: React.FC = () => {
-  const navigate = useNavigate();
-  const [feedbackToDelete, setFeedbackToDelete] = useState<Feedback | null>(null);
   const [blogFilter, setBlogFilter] = useState<string>('');
-  const [sortField, setSortField] = useState<SortField>('submitted_at');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   
   const { data: blogs } = useFetch<Blog[]>(
     ['blogs'], 
-    '/blogs/'
+    '/api/blogs/'
   );
   
   const { data: feedback, isLoading, error } = useFetch<Feedback[]>(
     ['feedback', { blog: blogFilter }], 
-    '/feedback/',
+    '/api/admin/feedback/',
     blogFilter ? { blog: blogFilter } : undefined
   );
   
-  const { mutate: deleteFeedback, isLoading: isDeleting } = useDelete(
-    '/feedback',
-    ['feedback'],
-    {
-      onSuccess: () => {
-        toast.success('Feedback deleted successfully');
-        setFeedbackToDelete(null);
-      },
-      onError: (error) => {
-        toast.error(`Error deleting feedback: ${error.message}`);
-      },
-    }
-  );
-  
-  const handleDelete = () => {
-    if (feedbackToDelete) {
-      deleteFeedback(feedbackToDelete.id);
-    }
-  };
-  
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-  
-  const sortedFeedback = React.useMemo(() => {
-    if (!feedback) return [];
+  const stats = useMemo(() => {
+    if (!feedback) return null;
     
-    return [...feedback].sort((a, b) => {
-      if (sortField === 'rating') {
-        return sortOrder === 'asc' ? a.rating - b.rating : b.rating - a.rating;
-      } else {
-        return sortOrder === 'asc'
-          ? new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime()
-          : new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
-      }
-    });
-  }, [feedback, sortField, sortOrder]);
-  
-  const columns = [
-    {
-      key: 'email',
-      header: 'User',
-      render: (item: Feedback) => (
-        <div className="font-medium text-gray-900">{item.email}</div>
-      ),
-    },
-    {
-      key: 'rating',
-      header: () => (
-        <button 
-          className="flex items-center focus:outline-none" 
-          onClick={() => toggleSort('rating')}
-        >
-          <span className="mr-1">Rating</span>
-          {sortField === 'rating' && (
-            sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />
-          )}
-        </button>
-      ),
-      render: (item: Feedback) => (
-        <div className="flex">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <svg
-              key={star}
-              className={`w-4 h-4 ${
-                star <= item.rating
-                  ? 'text-accent-400 fill-accent-400'
-                  : 'text-gray-300 fill-gray-300'
-              }`}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          ))}
-        </div>
-      ),
-      className: 'w-32',
-    },
-    {
-      key: 'message',
-      header: 'Message',
-      render: (item: Feedback) => (
-        <div className="truncate max-w-md">{item.message}</div>
-      ),
-    },
-    {
-      key: 'blog',
-      header: 'Blog ID',
-      render: (item: Feedback) => (
-        <div className="flex items-center">
-          <span className="mr-2">{item.blog}</span>
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/blogs/${item.blog}`);
-            }}
-          >
-            <ExternalLink size={14} />
-          </Button>
-        </div>
-      ),
-      className: 'w-32',
-    },
-    {
-      key: 'submitted_at',
-      header: () => (
-        <button 
-          className="flex items-center focus:outline-none" 
-          onClick={() => toggleSort('submitted_at')}
-        >
-          <span className="mr-1">Date</span>
-          {sortField === 'submitted_at' && (
-            sortOrder === 'asc' ? <SortAsc size={14} /> : <SortDesc size={14} />
-          )}
-        </button>
-      ),
-      render: (item: Feedback) => new Date(item.submitted_at).toLocaleDateString(),
-      className: 'w-32',
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      className: 'w-24',
-      render: (item: Feedback) => (
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              setFeedbackToDelete(item);
-            }}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      ),
-    },
-  ];
+    const total = feedback.length;
+    const avgRating = feedback.reduce((acc, item) => acc + item.rating, 0) / total;
+    const ratingDistribution = feedback.reduce((acc, item) => {
+      acc[item.rating] = (acc[item.rating] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+    
+    return {
+      total,
+      avgRating: avgRating.toFixed(1),
+      distribution: ratingDistribution,
+    };
+  }, [feedback]);
   
   if (error) {
     return (
@@ -200,109 +59,146 @@ const FeedbackList: React.FC = () => {
     { value: '', label: 'All Blogs' },
     ...(blogs || []).map(blog => ({
       value: blog.id.toString(),
-      label: `ID: ${blog.id} - ${blog.title}`,
+      label: blog.title,
     })),
   ];
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Feedback</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Feedback Dashboard</h1>
+        <div className="flex items-center space-x-3">
+          <Filter size={16} className="text-gray-500" />
+          <Select
+            options={blogOptions}
+            value={blogFilter}
+            onChange={(e) => setBlogFilter(e.target.value)}
+            className="w-64"
+          />
+        </div>
       </div>
       
-      <Card>
-        <Card.Header className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-          <Card.Title>All Feedback</Card.Title>
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <div className="flex items-center space-x-2">
-              <Button 
-                size="sm" 
-                variant={sortField === 'rating' ? 'primary' : 'outline'}
-                leftIcon={<Star size={14} />}
-                onClick={() => toggleSort('rating')}
-              >
-                Rating {sortField === 'rating' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </Button>
-              <Button 
-                size="sm" 
-                variant={sortField === 'submitted_at' ? 'primary' : 'outline'}
-                leftIcon={<Calendar size={14} />}
-                onClick={() => toggleSort('submitted_at')}
-              >
-                Date {sortField === 'submitted_at' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </Button>
-            </div>
-            <Select
-              options={blogOptions}
-              value={blogFilter}
-              onChange={(e) => setBlogFilter(e.target.value)}
-              className="w-full sm:w-60"
-            />
-          </div>
-        </Card.Header>
-        <Card.Content className="p-0">
-          <Table
-            data={sortedFeedback}
-            columns={columns}
-            keyExtractor={(item) => `feedback-${item.id}`}
-            isLoading={isLoading}
-            emptyMessage={blogFilter ? "No feedback found for this blog" : "No feedback found"}
-          />
-        </Card.Content>
-      </Card>
-      
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={!!feedbackToDelete}
-        onClose={() => setFeedbackToDelete(null)}
-        title="Delete Feedback"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            Are you sure you want to delete this feedback? This action cannot be undone.
-          </p>
-          {feedbackToDelete && (
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="flex justify-between">
-                <p className="font-medium text-gray-900">From: {feedbackToDelete.email}</p>
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className={`w-4 h-4 ${
-                        star <= feedbackToDelete.rating
-                          ? 'text-accent-400 fill-accent-400'
-                          : 'text-gray-300 fill-gray-300'
-                      }`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  ))}
+      {/* Stats Overview */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-gradient-to-br from-primary-500 to-primary-600">
+            <Card.Content className="p-6">
+              <div className="flex justify-between items-center text-white">
+                <div>
+                  <p className="text-primary-100">Total Feedback</p>
+                  <h3 className="text-3xl font-bold mt-1">{stats.total}</h3>
                 </div>
+                <MessageSquare className="h-8 w-8 opacity-80" />
               </div>
-              <p className="mt-2 text-gray-700">{feedbackToDelete.message}</p>
+            </Card.Content>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-accent-500 to-accent-600">
+            <Card.Content className="p-6">
+              <div className="flex justify-between items-center text-white">
+                <div>
+                  <p className="text-accent-100">Average Rating</p>
+                  <div className="flex items-center mt-1">
+                    <span className="text-3xl font-bold mr-2">{stats.avgRating}</span>
+                    <Star className="h-6 w-6" fill="currentColor" />
+                  </div>
+                </div>
+                <TrendingUp className="h-8 w-8 opacity-80" />
+              </div>
+            </Card.Content>
+          </Card>
+        </div>
+      )}
+      
+      {/* Rating Distribution */}
+      {stats && (
+        <Card>
+          <Card.Header>
+            <Card.Title>Rating Distribution</Card.Title>
+            <Card.Description>Overview of feedback ratings</Card.Description>
+          </Card.Header>
+          <Card.Content className="p-6">
+            <div className="space-y-3">
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = stats.distribution[rating] || 0;
+                const percentage = ((count / stats.total) * 100).toFixed(1);
+                
+                return (
+                  <div key={rating} className="flex items-center">
+                    <div className="w-12 text-sm text-gray-600 flex items-center">
+                      {rating} <Star className="h-4 w-4 ml-1 text-accent-400" />
+                    </div>
+                    <div className="flex-1 mx-4">
+                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                        <div
+                          className="bg-accent-400 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-20 text-sm text-gray-600">
+                      {count} ({percentage}%)
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card.Content>
+        </Card>
+      )}
+      
+      {/* Recent Feedback */}
+      <Card>
+        <Card.Header>
+          <Card.Title>Recent Feedback</Card.Title>
+          <Card.Description>Latest user comments and ratings</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          {isLoading ? (
+            <div className="py-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent" />
+            </div>
+          ) : !feedback || feedback.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">
+              No feedback available
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {feedback.map((item) => (
+                <div key={item.id} className="py-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-medium text-gray-900">{item.email}</p>
+                      <div className="flex items-center mt-1">
+                        {[...Array(5)].map((_, index) => (
+                          <Star
+                            key={index}
+                            className={`h-4 w-4 ${
+                              index < item.rating
+                                ? 'text-accent-400 fill-accent-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {new Date(item.submitted_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mt-2">{item.message}</p>
+                  {blogs && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      On: {blogs.find(b => b.id === item.blog)?.title || 'Unknown Blog'}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setFeedbackToDelete(null)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              isLoading={isDeleting}
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        </Card.Content>
+      </Card>
     </div>
   );
 };

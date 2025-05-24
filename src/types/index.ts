@@ -8,6 +8,8 @@ export interface Blog {
   image: string;
   estimated_read_time: number;
   created_at: string;
+  likes: number;
+  dislikes: number;
 }
 
 export interface Comment {
